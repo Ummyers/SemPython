@@ -1,0 +1,21 @@
+#include <omp.h>
+#include <stdio.h> 
+
+#define LIMITE 10
+
+int main(){
+
+double serie = 0;
+long long i;
+
+#pragma omp parallel reduction(+:serie)
+//Que operacion queremos que haga y donde lo guarda
+{
+  #pragma omp for
+  for(i=1; i<=LIMITE; i++){
+    serie += 1.0/i;
+  }
+  printf("Valor de la serie: %.5f\n", serie);
+}
+
+}
