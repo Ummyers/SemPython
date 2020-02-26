@@ -1,0 +1,10 @@
+//¿Que hace esto?
+#pragma parallel if(id==0)
+{
+  nthreads = nthrds;
+}
+
+#pragma omp for reduction (+:pi)
+{
+  pi += sum[i]*step;
+}
