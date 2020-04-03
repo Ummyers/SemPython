@@ -3,7 +3,7 @@
 #include <stdlib.h>  
 #include <math.h>
 
-#define N 100000
+#define N 10000
 
 /* Declaracion de funciones */
 double * generadorAleatorios(double a, double b);
@@ -163,12 +163,13 @@ double centro_1y(double x, double y){
 	double evalu = y*((x+y) + (2*y*y));
 }
 
+//Dummie?
 double centro_2x(double x, double y){
 	double evalu = sqrt((x*x) + (y*y)); 
-    return x * sin(evalu);
+    return -1* x * sin(evalu);
 }
 
 double centro_2y(double x, double y){
-	double evalu = sqrt((x*x)+(y*y));
-	return y * sin(evalu);
+	double evalu = sqrt((x*x) + (y*y));
+	return -1* y * sin(evalu);
 }
