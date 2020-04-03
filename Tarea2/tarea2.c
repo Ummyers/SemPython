@@ -8,15 +8,47 @@
 /* Declaracion de funciones */
 double * generadorAleatorios(double a, double b);
 void monteCarlo(int q, int w, int e, int r, double (*funcion)());
+/*Funciones de masa*/
 double masa_1(double x, double y);
 double masa_2(double x, double y);
-void monteCarloCentro(int q, int w, int e, int r, double (*funcion)());
+/*Funciones de centro de masa */
+double centro_1x(double x, double y);
+double centro_1y(double x, double y);
+double centro_2x(double x, double y);
+double centro_2y(double x, double y);
+
+void monteCarloCentro(int q, int w, int e, int r, double div, double (*funcion)());
 /*--------------------------*/
 
 int main(int argc, char const *argv[])
 {
+	MPI_Init(0,0);
+	double t1,t2;
+
+	//Tiempo inicial
+    t1 = MPI_Wtime();
+
+	int n = N;
+	printf("Con %d puntos los resultados son:\n", n);
+	printf("---Masa 1:\n");
 	monteCarlo(0,1,0,1,masa_1); 
+	printf("El centro de masa en x es:\n");
+	monteCarloCentro(0,1,0,1,1.5,centro_1x);
+	printf("El centro de masa con y es:\n");
+	monteCarloCentro(0,1,0,1,1.5,centro_1y);
+	printf("---Masa 2:\n");
 	monteCarlo(-1,1,-1,1,masa_2); 
+	printf("El centro de masa en x es:\n");
+	monteCarloCentro(-1,1,-1,1,2.6635,centro_2x);
+	printf("El centro de masa con y es:\n");
+	monteCarloCentro(-1,1,-1,1,2.6635,centro_2y);
+
+	//Tiempo final
+	t2 = MPI_Wtime();
+	printf("El tiempo del programa es: %lf\n", t2-t1);
+
+    MPI_Finalize( );
+
 	return 0;
 }
 
@@ -33,7 +65,9 @@ double * generadorAleatorios(double a, double b){
 	}
 	return numAle;
 }
-
+/* Metodo auxiliar para ver el comportamiento de los
+*	números aleatorios creados por rand
+*/
 void imprimeAleatorios(double array[]){
 	for (int i = 0; i< N; i++){
 			printf("%lf,",array[i]);		
@@ -41,7 +75,7 @@ void imprimeAleatorios(double array[]){
 }
 
 /* Metodo que dados los limites de una doble integral calcula la 
-*  suma de Monte Carlo para la masa 
+*  suma de Monte Carlo para la masa que es pasada como last parametro
 *
 */
 void monteCarlo(int q, int w, int e, int r, double (*funcion)()){
@@ -57,20 +91,20 @@ void monteCarlo(int q, int w, int e, int r, double (*funcion)()){
 	// imprimeAleatorios(yes);
 
 	double suma; //Guarda la suma total
-	double iz = ((b-a)*(d-c))/N;
+	double izq = ((b-a)*(d-c))/N;
 
 	for(int i =1; i<=N; i++){
 		suma = suma + funcion(equis[i-1],yes[i-1]);	// suma = suma + masa_1(equis[i-1],yes[i-1]);
 	}
 	// printf("Izquierdo: %lf\n", iz );
-	suma = iz * suma;
-	printf(" La aproximación es: %lf\n", suma);
+	suma = izq * suma;
+	printf(" La aproximación es: %lf kg\n", suma);
 }
 
 /* Metodo que dados los limites de una doble integral calcula la 
 *  suma de Monte Carlo para el centro de masa de x o y 
 */
-void monteCarloCentro(int q, int w, int e, int r, double (*funcion)()){
+void monteCarloCentro(int q, int w, int e, int r, double div, double (*funcion)()){
 
 	double a = (double) q;
 	double b = (double) w;
@@ -79,20 +113,24 @@ void monteCarloCentro(int q, int w, int e, int r, double (*funcion)()){
 
 	double* equis = generadorAleatorios(a,b);
 	double* yes = generadorAleatorios(c,d);
-	imprimeAleatorios(equis);
-	imprimeAleatorios(yes);
-
+	// imprimeAleatorios(equis);
+	// imprimeAleatorios(yes);
 	double suma; //Guarda la suma total
-	double iz = ((b-a)*(d-c))/N;
+	double M = 1/div;
+	// printf("M = %lf \n", M);
+	double izq = ((b-a)*(d-c))/N;
+	// printf("Izq = %lf \n", izq);
 
 	for(int i =1; i<=N; i++){
 		suma = suma + funcion(equis[i-1],yes[i-1]);	// suma = suma + masa_1(equis[i-1],yes[i-1]);
 	}
-	// printf("Izquierdo: %lf\n", iz );
-	suma = (1/1.5)* suma;
-	printf(" La aproximación es: %lf\n", suma);
+	// printf("Izquierdo: %lf\n", izq );
+	suma = M*izq*suma;
+	printf(" La aproximación con m %lf es: %lf\n",izq, suma);
+	suma = 0.0;
+	izq = 0.0;
+	M = 0.0;
 }
-
 
 //greetMorning
 double masa_1(double x, double y){
@@ -101,4 +139,20 @@ double masa_1(double x, double y){
 
 double masa_2(double x, double y){
 	double evalu = sin(sqrt(pow(x,2)+pow(y,2)));
+}
+
+double centro_1x(double x, double y){
+	double evalu = x *(pow(x,2) + (2*x*y));
+}
+
+double centro_1y(double x, double y){
+	double evalu = y *((x+y) + (2*pow(y,2)));
+}
+
+double centro_2x(double x, double y){
+	double evalu = x*(x*(sin(sqrt(pow(x,2)+pow(y,2)))));
+}
+
+double centro_2y(double x, double y){
+	double evalu = y * y * sin(sqrt(pow(x,2)+pow(y,2)));
 }
