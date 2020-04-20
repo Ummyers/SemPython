@@ -22,11 +22,3 @@ int main ()
 
 	return 0;
 }
-
-// printf("Se ejecutara un ejemplo\n");
-// 	const int arraySize = 3;
-// 	//Matrices
-//     const int a[arraySize][arraySize] = {{1,2,3},{3,2,1},{3,1,2}};
-//     const int b[arraySize][arraySize] = {{4,5,6,},{6,5,4},{5,4,6}};
-//     //Resultado
-//     int res[arraySize][arraySize] = {{0}};
