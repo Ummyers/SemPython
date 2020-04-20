@@ -23,20 +23,19 @@ __global__ void matrixMult(int* m,int* n, int* p, int size)
 }
 /*
 * Método que imprime una matriz de tamaño @tam
-Un metodo tipo Host indica que solo puede ser llamado por
-el mismo host (CPU)
+* Un metodo tipo Host indica que solo puede ser llamado por
+*  el mismo host (CPU)
 */
  __host__ void ImprimeMatriz(int tam, int* mat)
 {
-	printf("LOL\n");
-// 	for (int i = 0; i < tam; i++)
-// 	{
-// 		for (int j = 0; j < tam; i++)
-// 		{
-// 			printf("LOL, ");
-// 		}
-// 		printf("\n");
-// 	}
+	for (int i = 0; i < tam; i++)
+	{
+		for (int j = 0; j < tam; i++)
+		{
+			printf("%d, " mat[i*tam*j]);
+		}
+		printf("\n");
+	}
 }
 
 //Metodo que imprime solo la operación que se esta haciendo
@@ -53,7 +52,7 @@ __host__ void operacion(int a)
 	}
 }
 
-/* Metodo que hace copia de memoria del host al device 
+/* Metodo que hace copia de memoria del host al device y viceversa
 *	@size tamaño del las matrices
 *	@a puntero a primera matriz
 * 	@b putero a segunda matriz
@@ -77,6 +76,7 @@ __host__ void addOnCuda(int size, const int* a, const int* b, int* res)
     cudaMemcpy(dev_b, b, size * sizeof(int), cudaMemcpyHostToDevice);
     cudaMemcpy(dev_res, res, size * sizeof(int), cudaMemcpyHostToDevice);
 
+
     //Dirección destino, dir. origen, tamaño del dato, de donde a donde
     cudaMemcpy(res, dev_res, size * sizeof(int), cudaMemcpyDeviceToHost);
 	
@@ -84,6 +84,22 @@ __host__ void addOnCuda(int size, const int* a, const int* b, int* res)
 	cudaFree(dev_res);
 	cudaFree(dev_a);
 	cudaFree(dev_b);
+}
+
+/* Metodo que inicializa las matrices con valores aleatorios
+*	@a Matriz
+*	@b Matriz
+*	@n cantida de elementos de la matriz
+*/
+
+__host__ void inicializarMatriz(int* a, int* b, int n)
+{
+	for(int i=0;i<n;i++){
+		for(int j=0;j<n;j++){
+			a[i*n+j]=rand() % 1024;
+			b[i*n+j]=rand() % 1024;
+		}
+	}	
 }
 
 int main(int argc, char const *argv[])
@@ -104,6 +120,9 @@ int main(int argc, char const *argv[])
 	b = (int*)malloc(bytes);
 	res = (int*)malloc(bytes);
 
+	//Llenamos la matriz
+	inicializarMatriz(a, b, tamMatriz);
+
     //Para obtener el tiempo
     float tim = 0;
     cudaEvent_t start, stop;
@@ -111,13 +130,10 @@ int main(int argc, char const *argv[])
     cudaEventCreate(&stop);
 
 
-    //Se hace una copia de host a device
-    addOnCuda(bytes, a, b, res);
-
     //Se hacen los calculos en GPU----------------
     cudaEventRecord(start);
-
-
+	//Se hace una copia de host a device
+    addOnCuda(bytes, a, b, res);
     //Se sincronizan los hilos para cuando terminen
     cudaDeviceSynchronize();
 
@@ -130,7 +146,7 @@ int main(int argc, char const *argv[])
     operacion(2);
     ImprimeMatriz(tamMatriz, b);
     printf("=\n");
-    ImprimeMatriz(tamMatriz, res);
+    //ImprimeMatriz(tamMatriz, res);
 
     printf("El tiempo tomado por el algoritmo es de: %lf\n", tim);
     cudaDeviceReset();
