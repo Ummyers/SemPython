@@ -28,13 +28,11 @@ __global__ void matrixMult(int* m,int* n, int* p, int size)
 */
  __host__ void ImprimeMatriz(int tam, int* mat)
 {
-	for (int i = 0; i < tam; i++)
-	{
-		for (int j = 0; j < tam; i++)
-		{
-			printf("%d, " mat[i*tam*j]);
+	for (int i = 0; i < tam; i++){
+		for (int j = 0; j < tam; i++){
+			printf("%d, ", mat[i+tam+j]);
 		}
-		printf("\n");
+		printf(" \n");
 	}
 }
 
@@ -76,14 +74,14 @@ __host__ void addOnCuda(int size, const int* a, const int* b, int* res)
     cudaMemcpy(dev_b, b, size * sizeof(int), cudaMemcpyHostToDevice);
     cudaMemcpy(dev_res, res, size * sizeof(int), cudaMemcpyHostToDevice);
 
+    //llamada al metodo
+    // matrixMult<<< >>>()
 
     //Dirección destino, dir. origen, tamaño del dato, de donde a donde
     cudaMemcpy(res, dev_res, size * sizeof(int), cudaMemcpyDeviceToHost);
-	
-	//Libera memoria 
-	cudaFree(dev_res);
-	cudaFree(dev_a);
-	cudaFree(dev_b);
+
+    //Se sincronizan los hilos para cuando terminen
+    cudaDeviceSynchronize();
 }
 
 /* Metodo que inicializa las matrices con valores aleatorios
@@ -94,6 +92,7 @@ __host__ void addOnCuda(int size, const int* a, const int* b, int* res)
 
 __host__ void inicializarMatriz(int* a, int* b, int n)
 {
+	printf("Valor de tam: %d \n", n );
 	for(int i=0;i<n;i++){
 		for(int j=0;j<n;j++){
 			a[i*n+j]=rand() % 1024;
@@ -109,11 +108,11 @@ int main(int argc, char const *argv[])
 	int* a;
 	int* b;
 	int* res;
-	printf ("¿De qué tamaño es la matriz?");
+	printf ("¿De qué tamaño es la matriz? \n");
 	scanf ("%d", &tamMatriz);
 
 	size_t bytes = tamMatriz*tamMatriz*sizeof(int);
-	tamMatriz = tamMatriz * tamMatriz;
+	tamMatriz = tamMatriz*tamMatriz;
 
 	//Memoria para matrices
 	a = (int*)malloc(bytes);
@@ -122,6 +121,9 @@ int main(int argc, char const *argv[])
 
 	//Llenamos la matriz
 	inicializarMatriz(a, b, tamMatriz);
+	printf("Valor de tam es: %d \n",tamMatriz );
+	ImprimeMatriz(tamMatriz, a);
+	printf("ERROR\n");
 
     //Para obtener el tiempo
     float tim = 0;
@@ -134,13 +136,12 @@ int main(int argc, char const *argv[])
     cudaEventRecord(start);
 	//Se hace una copia de host a device
     addOnCuda(bytes, a, b, res);
-    //Se sincronizan los hilos para cuando terminen
-    cudaDeviceSynchronize();
-
+    
    //Se termino de hacer los calculos
     cudaEventRecord(stop);
     cudaEventElapsedTime(&tim, start, stop);
     
+
     //Se presentan los resultados de la operacion
     ImprimeMatriz(tamMatriz, a);
     operacion(2);
