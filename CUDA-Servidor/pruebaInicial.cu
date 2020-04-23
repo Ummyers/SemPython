@@ -8,6 +8,7 @@
 #include <cuda_device_runtime_api.h>
 #include <cuda_runtime_api.h>
 #include <device_launch_parameters.h>
+#include <sys/time.h>
 
 /* Metodo ejecutado en el GPU que suma matrices
 *	@m matriz a
@@ -17,6 +18,7 @@
 */
 __global__ void matrixSum(int* a,int* b, int* c, int size)
 {
+	// printf("ERROR en global\n");
 	int pos = threadIdx.x;
 	if(pos<size*size){
 		c[pos] = a[pos] + b[pos];
@@ -53,8 +55,8 @@ __host__ void inicializarMatriz(int* a, int* b, int n)
 	printf("Valor de tam: %d \n", n );
 	for(int i=0;i<n;i++){
 		for(int j=0;j<n;j++){
-			a[i*n+j]=rand() % 10;
-			b[i*n+j]=rand() % 10;
+			a[i*n+j]=rand() % 10 +1;
+			b[i*n+j]=rand() % 10 +1;
 		}
 	}	
 }
@@ -104,16 +106,25 @@ __host__ void addOnCuda(int size, const int* a, const int* b, int* res, int oper
 	int* dev_res = nullptr;
 
 	//Copiando en la memoria GPU las matrices. 
-    cudaMalloc((void**)&dev_a, size*size*sizeof(int));
-    cudaMalloc((void**)&dev_b, size*size*sizeof(int));
-    cudaMalloc((void**)&dev_res, size*size*sizeof(int));
+    cudaMalloc((void**)&dev_a, size);
+    cudaMalloc((void**)&dev_b, size);
+    cudaMalloc((void**)&dev_res, size);
 
     //Copiando los valores de las matrices al GPU desde host
-    cudaMemcpy(dev_a, a, size * sizeof(int), cudaMemcpyHostToDevice);
-    cudaMemcpy(dev_b, b, size * sizeof(int), cudaMemcpyHostToDevice);
+    cudaMemcpy(dev_a, a, size, cudaMemcpyHostToDevice);
+    cudaMemcpy(dev_b, b, size, cudaMemcpyHostToDevice);
 	
     //Dependiendo de la operación es la creación de Hilos y bloques
 
+    //Para obtener el tiempo
+    float tim = 0.0;
+    cudaEvent_t start, stop;
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
+
+    //Se hacen los calculos en GPU----------------
+    cudaEventRecord(start);
+	
     //Opción de la multiplicación
     if(oper==1){
     	int threads_per_block = (int) dim/2;
@@ -122,21 +133,22 @@ __host__ void addOnCuda(int size, const int* a, const int* b, int* res, int oper
 		dim3 grid_size(n / block_size.x, n / block_size.y);
 		// llamar el kernel
 		matrixMult<<< grid_size,block_size >>>(dev_a,dev_b,dev_res,dim);
-
+   	//Opción de suma
    	}else{
    		int hilos = dim*dim;
 		matrixSum<<<1,hilos>>>(dev_a,dev_b,dev_res,dim);
    	}
-   	//Opción de suma
 
     //Se sincronizan los hilos para cuando terminen
     cudaDeviceSynchronize();
 
+   //Se termino de hacer los calculos
+    cudaEventRecord(stop);
+    cudaEventElapsedTime(&tim, start, stop);
+    printf("El tiempo tomado por CUDA el algoritmo es de: %lf\n", tim);
+
     //Dirección destino, dir. origen, tamaño del dato, de donde a donde
-    cudaMemcpy(res, dev_res, size * sizeof(int), cudaMemcpyDeviceToHost);
-
-    // ImprimeMatriz(dim, res);s
-
+    cudaMemcpy(res, dev_res, size, cudaMemcpyDeviceToHost);
 }
 
 int main(int argc, char const *argv[])
@@ -170,19 +182,17 @@ int main(int argc, char const *argv[])
 	inicializarMatriz(a, b, tamMatriz);
 
     //Para obtener el tiempo
-    float tim = 0;
-    cudaEvent_t start, stop;
-    cudaEventCreate(&start);
-    cudaEventCreate(&stop);
-
-    //Se hacen los calculos en GPU----------------
-    cudaEventRecord(start);
-	//Se hace una copia de host a device
+    struct timeval inicio, fin;//nos permiten medir el tiempo de ejecucion
+	gettimeofday(&inicio, NULL);//guarda el tiempo al inicio del programa
+	int tiempo;
+   
+   //Se hacen los calculos en GPU----------------
     addOnCuda(bytes, a, b, res, opera, tamMatriz);
     
    //Se termino de hacer los calculos
-    cudaEventRecord(stop);
-    cudaEventElapsedTime(&tim, start, stop);
+    gettimeofday(&fin, NULL); //guarda el tiempo al final del programa
+	tiempo = (fin.tv_sec - inicio.tv_sec)* 1000000 + (fin.tv_usec - inicio.tv_usec);
+   
 
     //Se presentan los resultados de la operacion
     ImprimeMatriz(tamMatriz, a);
@@ -192,7 +202,7 @@ int main(int argc, char const *argv[])
     ImprimeMatriz(tamMatriz, res);
     //ImprimeMatriz(tamMatriz, res);
 
-    printf("El tiempo tomado por el algoritmo es de: %lf\n", tim);
+    printf("El tiempo tomado por el sistema del algoritmo es de:: %lf\n", tiempo);
 
     cudaDeviceReset();
 	return 0;
