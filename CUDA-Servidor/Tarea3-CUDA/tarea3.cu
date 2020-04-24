@@ -1,7 +1,9 @@
 /* Tarea 3 Seminario de Introducción a openMP-MPI y CUDA
 *	Muñiz Patiño, Andrea Fernanda
 *	Abril, Sem 2020-2 Semestre del coronavirus
+*	Para compilar $nvcc tarea3.cu -o exe --std=c++11
 */
+
 #include "cuda_runtime.h"
 #include <stdio.h>
 #include <stdlib.h>
